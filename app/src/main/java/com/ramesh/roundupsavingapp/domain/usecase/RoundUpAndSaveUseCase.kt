@@ -40,16 +40,6 @@ class RoundUpAndSaveUseCase @Inject constructor(
             } else {
                 Result.failure(Exception("No round-up savings this week."))
             }
-
-
-            // Proceed if round-up amount is greater than 0
-//            if (roundUpAmount > 0) {
-//                val goalId = repository.createSavingsGoal(account.accountUid, account.currency).getOrThrow()
-//                repository.transferToGoal(account.accountUid, goalId, roundUpAmount)
-//                Result.success("Successfully transferred round-up savings to goal.")
-//            } else {
-//                Result.failure(Exception("No round-up savings this week."))
-//            }
         } catch (e: Exception) {
             // Catch any exceptions and return failure result
             Result.failure(e)
@@ -83,11 +73,6 @@ class RoundUpAndSaveUseCase @Inject constructor(
         }
 
         return roundUpAmount
-//        if (roundUpAmount > 0) {
-//            Result.success(""+roundUpAmount)
-//        } else {
-//            Result.failure(Exception("No round-up savings this week."))
-//        }
     }
     suspend fun transferToGoal(
         accountUId: String,

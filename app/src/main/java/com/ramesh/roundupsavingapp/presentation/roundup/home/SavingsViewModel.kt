@@ -36,7 +36,6 @@ class SavingsViewModel @Inject constructor(
 
     init {
         fetchAccountsAndGoals()
-        println("uuidddd ${UUID.randomUUID()}")
     }
 
     fun fetchAccountsAndGoals() {
@@ -48,15 +47,14 @@ class SavingsViewModel @Inject constructor(
                 _accounts.value = accountList
 
                 if (accountList.isNotEmpty()) {
-                    val primaryAccount = accountList.first()
+                    val primaryAccount = accountList.firstOrNull() ?: return@launch
+
                     val goalAccount = roundUpAndSaveUseCase.getSavingsGoalsAccount(primaryAccount.accountUid)
 
                     _savingsGoalAccount.value = goalAccount
 
-                    // Fetch the round-up available amount
                     val roundUpValue = roundUpAndSaveUseCase.calculateRoundUp(primaryAccount)
                     _roundUpAmount.value = roundUpValue
-
                     _uiState.value = if (goalAccount == null) {
                         UiState.NoSavingsGoal(roundUpValue)
                     } else {
@@ -80,8 +78,8 @@ class SavingsViewModel @Inject constructor(
             _uiState.value = UiState.Loading
             try {
                 val result = roundUpAndSaveUseCase.transferToGoal(
-                    _accounts.value.first().accountUid, _roundUpAmount.value, _savingsGoalAccount.value!!.savingsGoalUid, "fdsfdsf",
-//                    "${UUID.randomUUID()}",
+                    _accounts.value.first().accountUid, _roundUpAmount.value, _savingsGoalAccount.value!!.savingsGoalUid,
+                    "${UUID.randomUUID()}",
                     TransferToGoalAccountRequest(Amount(CURRENCY_UNIT, minorUnits = (_roundUpAmount.value*100).roundToInt()))
                 )
                 _uiState.value = UiState.Success("$result Successfully transferred the fund")

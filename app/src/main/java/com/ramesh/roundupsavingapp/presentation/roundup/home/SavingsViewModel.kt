@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -53,7 +57,17 @@ class SavingsViewModel @Inject constructor(
 
                     _savingsGoalAccount.value = goalAccount
 
-                    val roundUpValue = roundUpAndSaveUseCase.calculateRoundUp(primaryAccount)
+                    // Calling the function and passing changeSince for 1 week ago
+                    val calendar = Calendar.getInstance()
+                    calendar.add(Calendar.DAY_OF_YEAR, -7) // Subtract 7 days to get 1 week ago
+                    val oneWeekAgo = calendar.time
+
+                    // Format the date as ISO 8601 string (e.g., "2025-03-24T12:00:00.000Z")
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                    dateFormat.timeZone = TimeZone.getTimeZone("UTC")
+                    val formattedDate = dateFormat.format(oneWeekAgo)
+
+                    val roundUpValue = roundUpAndSaveUseCase.calculateRoundUp(primaryAccount, changeSince = formattedDate)
                     _roundUpAmount.value = roundUpValue
                     _uiState.value = if (goalAccount == null) {
                         UiState.NoSavingsGoal(roundUpValue)

@@ -7,45 +7,16 @@ import com.ramesh.roundupsavingapp.domain.repository.SavingsRepository
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 class RoundUpAndSaveUseCase @Inject constructor(
     private val repository: SavingsRepository,
 
 ) {
-
-    suspend fun execute(): Result<String> {
-        return try {
-            // Fetching primary account details
-            val account = repository.getPrimaryAccount().getOrThrow().first()
-
-            // Collecting transactions from the repository (Flow to List)
-            val transactions = repository.getTransactions(account.accountUid, account.defaultCategory, "2024-02-28T05:33:04.656Z").first()
-
-            println("transactions $transactions")
-            // Calculating the round-up amount
-            val roundUpAmount = transactions.feedItems.sumOf {
-                val amountValue = BigDecimal(it.amount.minorUnits).divide(BigDecimal(100)) // Convert to BigDecimal first
-                val ceilValue = amountValue.setScale(0, RoundingMode.CEILING) // Round up to nearest whole number
-                val difference = ceilValue.subtract(amountValue).setScale(2, RoundingMode.HALF_UP) // Round-Up calculation
-
-                println("Ceil amt: $ceilValue, Amount: $amountValue, Round-Up: $difference")
-                println("orig amt: ${it.amount.minorUnits}, Converted: $amountValue, Ceil: $ceilValue")
-
-                difference.toDouble()
-            }
-
-            if (roundUpAmount > 0) {
-                Result.success(""+roundUpAmount)
-            } else {
-                Result.failure(Exception("No round-up savings this week."))
-            }
-        } catch (e: Exception) {
-            // Catch any exceptions and return failure result
-            Result.failure(e)
-        }
-    }
-
 
     suspend fun getAccounts(): List<Account> {
         return repository.getPrimaryAccount().getOrThrow()
@@ -56,24 +27,41 @@ class RoundUpAndSaveUseCase @Inject constructor(
         return savingsGoalsResponse.getOrThrow().savingsGoalList.firstOrNull()
     }
 
-    suspend fun calculateRoundUp(account: Account): Double {
-        val transactions = repository.getTransactions(account.accountUid, account.defaultCategory, "2024-02-28T05:33:04.656Z").first()
+suspend fun calculateRoundUp(account: Account, changeSince: String): Double {
+    val transactions = repository.getTransactions(account.accountUid, account.defaultCategory, changeSince).first()
 
-        println("transactions $transactions")
-        // Calculating the round-up amount
-        val roundUpAmount = transactions.feedItems.sumOf {
-            val amountValue = BigDecimal(it.amount.minorUnits).divide(BigDecimal(100)) // Convert to BigDecimal first
-            val ceilValue = amountValue.setScale(0, RoundingMode.CEILING) // Round up to nearest whole number
-            val difference = ceilValue.subtract(amountValue).setScale(2, RoundingMode.HALF_UP) // Round-Up calculation
+    // Get the current date (compatible with lower API levels using Calendar)
+    val calendar = Calendar.getInstance()
+    val today = calendar.time
 
-            println("Ceil amt: $ceilValue, Amount: $amountValue, Round-Up: $difference")
-            println("orig amt: ${it.amount.minorUnits}, Converted: $amountValue, Ceil: $ceilValue")
+    // Get the date 7 days ago
+    calendar.add(Calendar.DAY_OF_YEAR, -7)
+    val weekAgo = calendar.time
 
-            difference.toDouble()
-        }
+    // Create SimpleDateFormat for parsing the date string
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+    dateFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-        return roundUpAmount
+    // Filtering the transactions to include only those from the last 7 days
+    val recentTransactions = transactions.feedItems.filter {
+        // Parse the 'transactionTime' to Date
+        val transactionDate = dateFormat.parse(it.transactionTime)
+
+        // Check if the transaction date is within the last 7 days
+        val isWithinLastWeek = transactionDate != null && transactionDate.after(weekAgo) && !transactionDate.after(today)
+        isWithinLastWeek
     }
+
+    // Calculating the round-up amount for filtered transactions
+    val roundUpAmount = recentTransactions.sumOf {
+        val amountValue = BigDecimal(it.amount.minorUnits).divide(BigDecimal(100)) // Convert to BigDecimal first
+        val ceilValue = amountValue.setScale(0, RoundingMode.CEILING) // Round up to nearest whole number
+        val difference = ceilValue.subtract(amountValue).setScale(2, RoundingMode.HALF_UP) // Round-Up calculation
+        difference.toDouble()
+    }
+
+    return roundUpAmount
+}
     suspend fun transferToGoal(
         accountUId: String,
         roundUpAmount: Double,

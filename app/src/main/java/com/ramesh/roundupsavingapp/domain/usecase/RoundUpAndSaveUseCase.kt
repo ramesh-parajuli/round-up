@@ -61,9 +61,9 @@ class RoundUpAndSaveUseCase @Inject constructor(
         return repository.getPrimaryAccount().getOrThrow()
     }
 
-    suspend fun getSavingsGoalsAccount(accountId: String): SavingsGoal {
+    suspend fun getSavingsGoalsAccount(accountId: String): SavingsGoal? {
         val savingsGoalsResponse = repository.getSavingsGoalsAccount(accountId)
-        return savingsGoalsResponse.getOrThrow().savingsGoalList.first()
+        return savingsGoalsResponse.getOrThrow().savingsGoalList.firstOrNull()
     }
 
     suspend fun calculateRoundUp(account: Account): Double {

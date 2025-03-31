@@ -11,10 +11,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ramesh.roundupsavingapp.presentation.components.ErrorView
@@ -22,6 +24,10 @@ import com.ramesh.roundupsavingapp.presentation.components.ErrorView
 @Composable
 fun SavingsScreen(viewModel: SavingsViewModel, navController: NavController) {
     val uiState by viewModel.uiState.collectAsState()
+// Trigger refresh when screen is recomposed (e.g., after returning from another screen)
+    LaunchedEffect(Unit) {
+        viewModel.fetchAccountsAndGoals()
+    }
 
     Box(
         modifier = Modifier
@@ -77,15 +83,14 @@ fun SavingsScreen(viewModel: SavingsViewModel, navController: NavController) {
                 val roundUpAmount = (uiState as UiState.SavingsGoalAvailable).roundUpAmount
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
                     Text(
                         "Savings Goal Account",
                         style = MaterialTheme.typography.headlineMedium
                     )
 
-                    Text("Account Name: ${savingsGoal.name}",style = MaterialTheme.typography.headlineSmall)
-                    Text("Target: £%.2f".format((savingsGoal.target.minorUnits).toDouble()/100))
-                    Text("Balance: £%.2f".format((savingsGoal.totalSaved.minorUnits).toDouble()/100))
+                    Text("Account Name: ${savingsGoal.name}", style = MaterialTheme.typography.headlineSmall)
+                    Text("Target: £%.2f".format((savingsGoal.target.minorUnits).toDouble() / 100))
+                    Text("Balance: £%.2f".format((savingsGoal.totalSaved.minorUnits).toDouble() / 100))
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -94,9 +99,12 @@ fun SavingsScreen(viewModel: SavingsViewModel, navController: NavController) {
                         style = MaterialTheme.typography.headlineSmall
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        "Would you like to transfer the available roundup to goal-saver account ${savingsGoal.name}"
+                        text = "Would you like to transfer the available roundup to goal-saver account: ${savingsGoal.name}",
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium, // Smaller font
+                        modifier = Modifier.padding(horizontal = 16.dp) // Add padding for better readability
                     )
                     Button(onClick = { viewModel.roundUpAndSave() }) {
                         Text("Transfer Round-Up")
@@ -129,20 +137,8 @@ fun SavingsScreen(viewModel: SavingsViewModel, navController: NavController) {
             }
 
             is UiState.Error -> {
-//                ErrorView(message = (uiState as UiState.Error).message, viewModel = viewModel)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "Error: ${(uiState as UiState.Error).message}",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(onClick = { viewModel.fetchAccountsAndGoals() }) {
-                        Text("Retry")
-                    }
-                }
+                // Error view handled by ErrorView Composable
+                ErrorView(message = (uiState as UiState.Error).message, viewModel = viewModel)
             }
         }
     }

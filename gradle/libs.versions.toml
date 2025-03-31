@@ -15,6 +15,8 @@ retrofit = "2.9.0"
 kotlinCompiler = "1.9.0"
 logging-interceptor="4.9.3"
 navigationCompose = "2.8.9"
+composeVersion = "1.7.8"
+mockkVersion = "1.13.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +35,12 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+
+# Unit Testing for Compose
+ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "composeVersion" }
+
+# MockK for mocking ViewModel
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockkVersion" }
 
 # Hilt dependencies
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }

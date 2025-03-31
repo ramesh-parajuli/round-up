@@ -21,10 +21,33 @@ fun CreateSavingsGoalScreen(
     var goalName by remember { mutableStateOf("") }
     var targetAmount by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
+    val isGoalCreated by viewModel.isGoalCreated.collectAsState()
 
     // Set accountId once
     LaunchedEffect(accountUid) {
         viewModel.setAccountId(accountUid)
+    }
+
+    // Show success dialog when goal is created
+    if (isGoalCreated == true) {
+        AlertDialog(
+            onDismissRequest = {
+                navController.previousBackStackEntry?.savedStateHandle?.set("goalCreated", true)
+                navController.popBackStack()
+            },
+            title = { Text("Success") },
+            text = { Text("Your savings goal has been created successfully!") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        navController.previousBackStackEntry?.savedStateHandle?.set("goalCreated", true)
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text("Back to Main Screen")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -50,7 +73,7 @@ fun CreateSavingsGoalScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding), // Use innerPadding to avoid overlapping with the AppBar
+                    .padding(innerPadding), // Avoid overlapping with AppBar
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -70,7 +93,7 @@ fun CreateSavingsGoalScreen(
                     OutlinedTextField(
                         value = targetAmount,
                         onValueChange = { targetAmount = it },
-                        label = { Text("Target Amount") },
+                        label = { Text("Target Amount(GBP)") },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -91,7 +114,7 @@ fun CreateSavingsGoalScreen(
 
                     when (uiState) {
                         is UiState.Loading -> {
-                            CircularProgressIndicator() // Show loading spinner
+                            CircularProgressIndicator()
                         }
 
                         is UiState.Success -> {
@@ -108,12 +131,8 @@ fun CreateSavingsGoalScreen(
                             )
                         }
 
-                        else -> {} // Idle state, do nothing
+                        else -> {} // Idle state
                     }
-                }
-                // Show loading indicator on top of everything
-                if (uiState is UiState.Loading) {
-                    CircularProgressIndicator()
                 }
             }
         }
